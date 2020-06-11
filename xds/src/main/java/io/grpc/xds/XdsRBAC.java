@@ -16,27 +16,10 @@
 
 package io.grpc.xds;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-
 import io.envoyproxy.envoy.config.rbac.v2.RBAC;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
-/**
- * An {@link XdsClient} instance encapsulates all of the logic for communicating with the xDS
- * server. It may create multiple RPC streams (or a single ADS stream) for a series of xDS
- * protocols (e.g., LDS, RDS, VHDS, CDS and EDS) over a single channel. Watch-based interfaces
- * are provided for each set of data needed by gRPC.
- */
 class XdsRBAC {
     private RBAC rbac;
 
