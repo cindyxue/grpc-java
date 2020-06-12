@@ -39,27 +39,35 @@ class XdsRBAC {
     private RBAC rbac;
 
     public XdsRBAC(@Nullable RBAC rbac) {
-
-        Expr.Builder exprBuilder = Expr.newBuilder();
-
-
-        RBAC.Builder rbacBuilder = RBAC.newBuilder();
-        rbacBuilder.setAction(RBAC.Action.ALLOW);
-
+        
         Permission.Builder permissionBuilder = Permission.newBuilder();
+        Permission.Set.Builder permissionSetBuilder = Permission.Set.newBuilder();
+
+        permissionSetBuilder.addRules(permissionBuilder.build());
+        permissionBuilder.setAndRules(permissionSetBuilder.build());
+        permissionBuilder.setAny(false);
+        // permissionBuilder.setHeader("");
 
 
         Principal.Builder principalBuilder = Principal.newBuilder();
         Principal.Authenticated.Builder authBuilder = Principal.Authenticated.newBuilder();
 
         principalBuilder.setAuthenticated(authBuilder.build());
+        principalBuilder.setAny(false);
+        principalBuilder.setNotId(principalBuilder.build());
+
         
+        Policy.Builder policyBuilder = Policy.newBuilder();
+        Expr.Builder exprBuilder = Expr.newBuilder();
+        
+        policyBuilder.addPermissions(permissionBuilder.build());
+        policyBuilder.addPrincipals(principalBuilder.build());
+        policyBuilder.setCondition(exprBuilder.build());
 
-        Policy.Builder policyBuilder = Policy.newBuilder()
-                    .addPermissions (permissionBuilder.build())
-                    .addPrincipals  (principalBuilder.build())
-                    .setCondition   (exprBuilder.build());
 
+        RBAC.Builder rbacBuilder = RBAC.newBuilder();
+
+        rbacBuilder.setAction(RBAC.Action.ALLOW);
         rbacBuilder.putPolicies("", policyBuilder.build());
 
         this.rbac = rbacBuilder.build();
