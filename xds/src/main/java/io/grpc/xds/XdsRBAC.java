@@ -17,6 +17,12 @@
 package io.grpc.xds;
 
 import io.envoyproxy.envoy.config.rbac.v2.RBAC;
+import io.envoyproxy.envoy.config.rbac.v2.Policy;
+import io.envoyproxy.envoy.config.rbac.v2.Permission;
+import io.envoyproxy.envoy.config.rbac.v2.Principal;
+import com.google.api.expr.v1alpha1.Expr;
+// import com.github.udpa.udpa.service.orca.v1.OrcaLoadReportRequest;
+
 
 import javax.annotation.Nullable;
 
@@ -24,7 +30,16 @@ class XdsRBAC {
     private RBAC rbac;
 
     public XdsRBAC(@Nullable RBAC rbac) {
-        this.rbac = rbac;
+        RBAC.Builder builder = RBAC.newBuilder()
+            .setAction(RBAC.Action.ALLOW)
+            .putPolicies("", 
+                Policy.newBuilder()
+                    .addPermissions(Permission.newBuilder().build())
+                    .addPrincipals(Principal.newBuilder().build())
+                    // .setCondition(Expr.newBuilder.build())
+                    .build());
+
+        this.rbac = builder.build();
     }
 
     @Nullable
