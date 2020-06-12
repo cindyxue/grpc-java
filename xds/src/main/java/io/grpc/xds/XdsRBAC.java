@@ -39,16 +39,30 @@ class XdsRBAC {
     private RBAC rbac;
 
     public XdsRBAC(@Nullable RBAC rbac) {
-        RBAC.Builder builder = RBAC.newBuilder()
-            .setAction(RBAC.Action.ALLOW)
-            .putPolicies("", 
-                Policy.newBuilder()
-                    .addPermissions(Permission.newBuilder().build())
-                    .addPrincipals(Principal.newBuilder().build())
-                    .setCondition(Expr.newBuilder().build())
-                    .build());
 
-        this.rbac = builder.build();
+        Expr.Builder exprBuilder = Expr.newBuilder();
+
+
+        RBAC.Builder rbacBuilder = RBAC.newBuilder();
+        rbacBuilder.setAction(RBAC.Action.ALLOW);
+
+        Permission.Builder permissionBuilder = Permission.newBuilder();
+
+
+        Principal.Builder principalBuilder = Principal.newBuilder();
+        Principal.Authenticated.Builder authBuilder = Principal.Authenticated.newBuilder();
+
+        principalBuilder.setAuthenticated(authBuilder.build());
+        
+
+        Policy.Builder policyBuilder = Policy.newBuilder()
+                    .addPermissions (permissionBuilder.build())
+                    .addPrincipals  (principalBuilder.build())
+                    .setCondition   (exprBuilder.build());
+
+        rbacBuilder.putPolicies("", policyBuilder.build());
+
+        this.rbac = rbacBuilder.build();
     }
 
     @Nullable
