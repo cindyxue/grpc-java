@@ -20,9 +20,18 @@ import io.envoyproxy.envoy.config.rbac.v2.RBAC;
 import io.envoyproxy.envoy.config.rbac.v2.Policy;
 import io.envoyproxy.envoy.config.rbac.v2.Permission;
 import io.envoyproxy.envoy.config.rbac.v2.Principal;
-import com.google.api.expr.v1alpha1.Expr;
-// import com.github.udpa.udpa.service.orca.v1.OrcaLoadReportRequest;
 
+import io.envoyproxy.envoy.type.matcher.MetadataMatcher;
+import io.envoyproxy.envoy.type.matcher.DoubleMatcher;
+import io.envoyproxy.envoy.type.matcher.PathMatcher;
+import io.envoyproxy.envoy.type.matcher.ValueMatcher;
+import io.envoyproxy.envoy.type.matcher.ListMatcher;
+
+import com.google.api.expr.v1alpha1.ParsedExpr;
+import com.google.api.expr.v1alpha1.Expr;
+import com.google.api.expr.v1alpha1.Constant;
+import com.google.api.expr.v1alpha1.SourceInfo;
+import com.google.api.expr.v1alpha1.SourcePosition;
 
 import javax.annotation.Nullable;
 
@@ -36,7 +45,7 @@ class XdsRBAC {
                 Policy.newBuilder()
                     .addPermissions(Permission.newBuilder().build())
                     .addPrincipals(Principal.newBuilder().build())
-                    // .setCondition(Expr.newBuilder.build())
+                    .setCondition(Expr.newBuilder().build())
                     .build());
 
         this.rbac = builder.build();
