@@ -34,6 +34,11 @@ import com.google.api.expr.v1alpha1.SourceInfo;
 import com.google.api.expr.v1alpha1.SourcePosition;
 
 import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 
 class XdsRBAC {
     private RBAC rbac;
@@ -76,5 +81,18 @@ class XdsRBAC {
     @Nullable
     RBAC getRbac() {
         return rbac;
+    }
+}
+
+class Condition {
+    private List<Expr> expr;
+
+    public Condition(@Nullable RBAC rbac) {
+        this.expr = new ArrayList<>();
+        Map<String, Policy> policies = rbac.getPolicies();
+
+        for(String s: policies.keySet()) {
+            this.expr.add(policies.get(s).getCondition());
+        }
     }
 }
