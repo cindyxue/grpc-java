@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+// A prototype for CelEngine in gRPC-Java
+
 class AuthorizationDecision {
     enum Decision {
         ALLOW,
@@ -50,7 +52,7 @@ class AuthorizationDecision {
     private String authorizationContext;
 }
 
-Class that holds attribute context
+// Class that holds attribute context
 class EvaluateArgs {
     final Metadata headers;
     final ServerCall<ReqT, RespT> call;
@@ -70,13 +72,14 @@ class CelEvaluationEngine {
 
         // returns whether or not args matches this expr
         public boolean matches(EvaluateArgs args) {
-            return true;
+            // Todo
         }
     }
 
     Action action;
   	Map<String, Condition> conditions;
 
+	// Builds a CEL evaluation engine from Envoy RBAC.
     public CelEvaluationEngine(@Nullable RBAC rbac) {
         this.action = rbac.getAction() == RBAC.Action.ALLOW ? Action.ALLOW : Action.DENY;
         this.conditions = new HashMap<>();
@@ -85,6 +88,12 @@ class CelEvaluationEngine {
         }
     }
 
+    // Builds a CEL evaluation engine from runtime policy template.
+    public CelEvaluationEngine(RTPolicyTemplate rt_policy) {
+        // TBD
+    }
+
+	// Evaluates Envoy Attributes and returns an authorization decision.
     public AuthorizationDecision evaluate(EvaluateArgs args) {
         AuthorizationDecision authDecision = new AuthorizationDecision();
         for (Map.Entry<String, Condition> entry : this.conditions.entrySet()) {
