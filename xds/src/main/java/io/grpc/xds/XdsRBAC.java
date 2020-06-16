@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The gRPC Authors
+ * Copyright 2020 The gRPC Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,32 +81,5 @@ class XdsRBAC {
     @Nullable
     RBAC getRbac() {
         return rbac;
-    }
-}
-
-class Condition {
-    private Expr expr;
-
-    public Condition(Expr expr) {
-        this.expr = expr;
-    }
-}
-
-enum Action {
-  ALLOW,
-  DENY
-}
-
-class CelEvaluationEngine {
-    Action action;
-  	Map<String, Condition> conditions;
-
-    public CelEvaluationEngine(@Nullable RBAC rbac) {
-        this.conditions = new HashMap<>();
-
-        Map<String, Policy> policies = rbac.getPolicies();
-        for(String s: policies.keySet()) {
-            this.conditions.put(s, new Condition(policies.get(s).getCondition()));
-        }
     }
 }
