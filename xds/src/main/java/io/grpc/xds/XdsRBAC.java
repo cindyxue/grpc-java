@@ -85,14 +85,28 @@ class XdsRBAC {
 }
 
 class Condition {
-    private List<Expr> expr;
+    private Expr expr;
 
-    public Condition(@Nullable RBAC rbac) {
-        this.expr = new ArrayList<>();
+    public Condition(Expr expr) {
+        this.expr = expr;
+    }
+}
+
+enum Action {
+  ALLOW,
+  DENY
+}
+
+class CelEvaluationEngine {
+    Action action;
+  	Map<String, Condition> conditions;
+
+    public CelEvaluationEngine(@Nullable RBAC rbac) {
+        this.conditions = new HashMap<>();
+
         Map<String, Policy> policies = rbac.getPolicies();
-
         for(String s: policies.keySet()) {
-            this.expr.add(policies.get(s).getCondition());
+            this.conditions.put(s, new Condition(policies.get(s).getCondition()));
         }
     }
 }
