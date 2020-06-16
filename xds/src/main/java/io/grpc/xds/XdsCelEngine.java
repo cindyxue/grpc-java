@@ -63,6 +63,7 @@ class CelEvaluationEngine {
         ALLOW,
         DENY
     }
+
     class Condition {
         private Expr expr;
 
@@ -77,9 +78,9 @@ class CelEvaluationEngine {
     }
 
     Action action;
-  	Map<String, Condition> conditions;
+    Map<String, Condition> conditions;
 
-	// Builds a CEL evaluation engine from Envoy RBAC.
+    // Builds a CEL evaluation engine from Envoy RBAC.
     public CelEvaluationEngine(@Nullable RBAC rbac) {
         this.action = rbac.getAction() == RBAC.Action.ALLOW ? Action.ALLOW : Action.DENY;
         this.conditions = new HashMap<>();
@@ -93,7 +94,7 @@ class CelEvaluationEngine {
         // TBD
     }
 
-	// Evaluates Envoy Attributes and returns an authorization decision.
+    // Evaluates Envoy Attributes and returns an authorization decision.
     public AuthorizationDecision evaluate(EvaluateArgs args) {
         AuthorizationDecision authDecision = new AuthorizationDecision();
         for (Map.Entry<String, Condition> entry : this.conditions.entrySet()) {
