@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-package io.grpc.xds;
+package io.grpc;
 
 import io.envoyproxy.envoy.config.rbac.v2.RBAC;
 import io.envoyproxy.envoy.config.rbac.v2.Policy;
-import io.envoyproxy.envoy.config.rbac.v2.Permission;
-import io.envoyproxy.envoy.config.rbac.v2.Principal;
-
-import io.envoyproxy.envoy.type.matcher.MetadataMatcher;
-import io.envoyproxy.envoy.type.matcher.DoubleMatcher;
-import io.envoyproxy.envoy.type.matcher.PathMatcher;
-import io.envoyproxy.envoy.type.matcher.ValueMatcher;
-import io.envoyproxy.envoy.type.matcher.ListMatcher;
-
-import com.google.api.expr.v1alpha1.ParsedExpr;
+import io.grpc.Metadata;
+import io.grpc.ServerCall;
 import com.google.api.expr.v1alpha1.Expr;
-import com.google.api.expr.v1alpha1.Constant;
-import com.google.api.expr.v1alpha1.SourceInfo;
-import com.google.api.expr.v1alpha1.SourcePosition;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -48,14 +37,14 @@ class AuthorizationDecision {
         UNKNOWN,
     }
 
-    private Decision decision;
-    private String authorizationContext;
+    Decision decision;
+    String authorizationContext;
 }
 
 // Class that holds attribute context
 class EvaluateArgs {
-    final Metadata headers;
-    final ServerCall<ReqT, RespT> call;
+    Metadata headers;
+    ServerCall call;
 }
 
 class CelEvaluationEngine {
@@ -74,6 +63,7 @@ class CelEvaluationEngine {
         // returns whether or not args matches this expr
         public boolean matches(EvaluateArgs args) {
             // Todo
+            return true;
         }
     }
 
@@ -90,23 +80,24 @@ class CelEvaluationEngine {
     }
 
     // Builds a CEL evaluation engine from runtime policy template.
-    public CelEvaluationEngine(RTPolicyTemplate rt_policy) {
-        // TBD
-    }
+    // public CelEvaluationEngine(RTPolicyTemplate rt_policy) {
+    //     // TBD
+    // }
 
     // Evaluates Envoy Attributes and returns an authorization decision.
     public AuthorizationDecision evaluate(EvaluateArgs args) {
         AuthorizationDecision authDecision = new AuthorizationDecision();
         for (Map.Entry<String, Condition> entry : this.conditions.entrySet()) {
             if (entry.getValue().matches(args)) {
-                authDecision.decision = rbac.getAction() == Action.ALLOW ? Decision.ALLOW : Decision.DENY;
+                authDecision.decision = this.action == Action.ALLOW ? 
+                    AuthorizationDecision.Decision.ALLOW : AuthorizationDecision.Decision.DENY;
                 authDecision.authorizationContext = "policy matched: " + entry.getKey();
                 return authDecision;
             }
         }
 
-        authDecision.decision = rbac.getAction() == Action.ALLOW ? Decision.DENY : Decision.ALLOW;
-        authDecision.authorizationContext = "no policies matched";
+        authDecision.decision = AuthorizationDecision.Decision.UNKNOWN;
+        authDecision.authorizationContext = "Unable to decide based on given information - no policies matched";
         return authDecision;
     }
 }
