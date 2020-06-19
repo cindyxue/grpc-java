@@ -35,6 +35,8 @@ public class HeaderServerInterceptor implements ServerInterceptor {
   static final Metadata.Key<String> CUSTOM_HEADER_KEY =
       Metadata.Key.of("custom_server_header_key", Metadata.ASCII_STRING_MARSHALLER);
 
+  static final Metadata.Key<String> CUSTOM_METADATA_KEY =
+      Metadata.Key.of("custom_server_metadata_key", Metadata.ASCII_STRING_MARSHALLER);
 
   @Override
   public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
@@ -42,6 +44,7 @@ public class HeaderServerInterceptor implements ServerInterceptor {
       final Metadata requestHeaders,
       ServerCallHandler<ReqT, RespT> next) {
     logger.info("header received from client:" + requestHeaders);
+    logger.info("header received from client:" + requestHeaders.get(CUSTOM_METADATA_KEY));
     return next.startCall(new SimpleForwardingServerCall<ReqT, RespT>(call) {
       @Override
       public void sendHeaders(Metadata responseHeaders) {

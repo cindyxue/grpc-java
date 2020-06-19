@@ -61,6 +61,11 @@ public class CustomHeaderClient {
   private void greet(String name) {
     logger.info("Will try to greet " + name + " ...");
     HelloRequest request = HelloRequest.newBuilder().setName(name).build();
+
+    String requestName = request.getName();
+    String requestHost = request.getHost();
+    String requestMethod = request.getMethod();
+    
     HelloReply response;
     try {
       response = blockingStub.sayHello(request);
