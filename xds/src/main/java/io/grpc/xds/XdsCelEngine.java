@@ -100,4 +100,21 @@ class CelEvaluationEngine {
         authDecision.authorizationContext = "Unable to decide based on given information - no policies matched";
         return authDecision;
     }
+
+    public void extractFields(EvaluateArgs args) {
+        String requestUrlPath = "";
+        String requestHost = "";
+        String requestMethod = "";
+        Map<String, ?> requestHeaders = new HashMap<>();
+        String sourceAddress = "";
+        int sourcePort = 0;
+        String destinationAddress = "";
+        int destinationPort = 0;
+        Metadata metadata = new Metadata();
+        String connectionRequestedServerName = "";
+        String connectionUriSanPeerCertificate = "";
+
+        // metadata = args.headers.get(Metadata.Key<T> key);
+        // requestUrlPath = metadata.getHost();
+    }
 }
