@@ -17,29 +17,23 @@
 package io.grpc.xds.internal;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 import com.google.api.expr.v1alpha1.CheckedExpr;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
-import io.grpc.Metadata;
 import io.grpc.xds.InterpreterException;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.rules.ExpectedException;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.junit.Test;
 
 /** Unit tests for {@link DefaultInterpreter}. */
 @RunWith(JUnit4.class)
-public class DefaultInterpreterTest {
+public class CelInterfaceTest {
 
   @Test
   public void setup() throws InterpreterException {
@@ -62,5 +56,6 @@ public class DefaultInterpreterTest {
 
     Activation activation = Activation.copyOf(apiAttributes);
     Object result = interpreter.createInterpretable(checkedResult).eval(activation);
+    assertThat(result).isNotNull();
   }
 }
