@@ -18,6 +18,10 @@ package io.grpc.xds.internal;
 
 import com.google.api.expr.v1alpha1.CheckedExpr;
 import com.google.api.expr.v1alpha1.Expr;
+import com.google.api.expr.v1alpha1.ParsedExpr;
+import com.google.api.expr.v1alpha1.SourceInfo;
+import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.Descriptors.Descriptor;
 import io.envoyproxy.envoy.config.rbac.v2.Policy;
 import io.envoyproxy.envoy.config.rbac.v2.RBAC;
 import io.grpc.Attributes;
@@ -38,78 +42,18 @@ import java.util.Map;
  * Envoy RBAC condition in gRPC-Java.
  */
 public class CelEvaluationEngine<ReqT, RespT> {
-  private enum Action {
-    ALLOW,
-    DENY
-  }
-
-  /** Holds conditions of RBAC policies. */
-  private class Condition {
-    private Expr expr;
-
-    public Condition(Expr expr) {
-      this.expr = expr;
-    }
-
-    /**
-     * Check if arg matches with the condition expr
-     * @param args EvaluateArgs that is used to evaluate the conditions.
-     * @return whether or not arg matches this expr
-     */
-    public boolean matches(EvaluateArgs<ReqT, RespT> args) {
-      // Extract Envoy Attributes from EvaluateArgs
-      ServerCall<ReqT, RespT> call = args.getCall();
-      String requestUrlPath = "";
-      String requestHost = call.getMethodDescriptor().getServiceName();
-      String requestMethod = call.getMethodDescriptor().getFullMethodName();
-      String sourceAddress = call.getAttributes()
-        .get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR).toString();
-      int sourcePort = 0;
-      String destinationAddress = call.getAttributes()
-        .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR).toString();
-      int destinationPort = 0;
-      Metadata requestHeaders = args.getHeaders();
-      String connectionRequestedServerName = call.getAuthority();
-      String connectionUriSanPeerCertificate = "";
-
-      // List<Descriptor> descriptors = new ArrayList<>();
-      // RuntimeTypeProvider messageProvider = DescriptorMessageProvider.dynamicMessages(descriptors);
-      // Dispatcher dispatcher = DefaultDispatcher.create();
-      // Interpreter interpreter = new DefaultInterpreter(messageProvider, dispatcher);
-  
-      // CheckedExpr checkedResult = CheckedExpr.newBuilder().build();
-  
-      // Map<String, Object> map = new HashMap<>();
-      // map.put("requestUrlPath", new Object());
-      // map.put("requestHost", new Object());
-      // map.put("requestMethod", new Object());
-      // map.put("requestHeaders", new Object());
-      // map.put("sourceAddress", new Object());
-      // map.put("sourcePort", new Object());
-      // map.put("destinationAddress", new Object());
-  
-      // ImmutableMap<String, Object> apiAttributes = ImmutableMap.copyOf(map);
-  
-      // Activation activation = Activation.copyOf(apiAttributes);
-      // Object result = interpreter.createInterpretable(checkedResult).eval(activation);
-      
-      // Todo
-      return true;
-    }
-  }
-
-  Action action;
-  Map<String, Condition> conditions;
+  private RBAC.Action action;
+  Map<String, Expr> conditions;
 
   /**
    * Builds a CEL evaluation engine from Envoy RBAC.
    * @param rbac input envoy RBAC policies.
    */
   public CelEvaluationEngine(@Nullable RBAC rbac) {
-    this.action = rbac.getAction() == RBAC.Action.ALLOW ? Action.ALLOW : Action.DENY;
+    this.action = rbac.getAction();
     this.conditions = new HashMap<>();
     for(Map.Entry<String, Policy> entry: rbac.getPolicies().entrySet()) {
-        this.conditions.put(entry.getKey(), new Condition(entry.getValue().getCondition()));
+        this.conditions.put(entry.getKey(), entry.getValue().getCondition());
     }
   }
 
@@ -123,11 +67,12 @@ public class CelEvaluationEngine<ReqT, RespT> {
    * @param args EvaluateArgs that is used to evaluate the conditions.
    * @return an AuthorizationDecision.
    */
-  public AuthorizationDecision evaluate(EvaluateArgs<ReqT, RespT> args) {
+  public AuthorizationDecision evaluate(EvaluateArgs<ReqT, RespT> args) 
+    throws InterpreterException {
     AuthorizationDecision authDecision = new AuthorizationDecision();
-    for (Map.Entry<String, Condition> entry : this.conditions.entrySet()) {
-      if (entry.getValue().matches(args)) {
-        authDecision.decision = this.action == Action.ALLOW ? 
+    for (Map.Entry<String, Expr> entry : this.conditions.entrySet()) {
+      if (Evaluator.matches(entry.getValue(), args)) {
+        authDecision.decision = this.action == RBAC.Action.ALLOW ? 
             AuthorizationDecision.Decision.ALLOW : AuthorizationDecision.Decision.DENY;
         authDecision.authorizationContext = "policy matched: " + entry.getKey();
         return authDecision;
