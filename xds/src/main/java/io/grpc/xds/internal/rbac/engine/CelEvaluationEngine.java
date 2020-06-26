@@ -42,8 +42,8 @@ import java.util.Map;
  * Envoy RBAC condition in gRPC-Java.
  */
 public class CelEvaluationEngine<ReqT, RespT> {
-  private RBAC.Action action;
-  Map<String, Expr> conditions;
+  private final RBAC.Action action;
+  private final Map<String, Expr> conditions;
 
   /**
    * Builds a CEL evaluation engine from Envoy RBAC.
