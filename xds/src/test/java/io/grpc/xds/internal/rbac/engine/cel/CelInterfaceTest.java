@@ -34,14 +34,20 @@ import org.junit.runners.JUnit4;
 /** Unit tests for {@link DefaultInterpreter}. */
 @RunWith(JUnit4.class)
 public class CelInterfaceTest {
+  private RuntimeTypeProvider messageProvider;
+  private Dispatcher dispatcher;
+  private Interpreter interpreter;
+  private CheckedExpr checkedResult;
+  private Activation activation;
+  private Object result;
 
   @Test
   public void setup() throws InterpreterException {
     List<Descriptor> descriptors = new ArrayList<>();
-    RuntimeTypeProvider messageProvider = DescriptorMessageProvider.dynamicMessages(descriptors);
-    Dispatcher dispatcher = DefaultDispatcher.create();
-    Interpreter interpreter = new DefaultInterpreter(messageProvider, dispatcher);
-    CheckedExpr checkedResult = CheckedExpr.newBuilder().build();
+    messageProvider = DescriptorMessageProvider.dynamicMessages(descriptors);
+    dispatcher = DefaultDispatcher.create();
+    interpreter = new DefaultInterpreter(messageProvider, dispatcher);
+    checkedResult = CheckedExpr.newBuilder().build();
 
     Map<String, Object> map = new HashMap<>();
     map.put("requestUrlPath", new Object());
@@ -54,8 +60,23 @@ public class CelInterfaceTest {
 
     ImmutableMap<String, Object> apiAttributes = ImmutableMap.copyOf(map);
 
-    Activation activation = Activation.copyOf(apiAttributes);
-    Object result = interpreter.createInterpretable(checkedResult).eval(activation);
+    activation = Activation.copyOf(apiAttributes);
+    result = interpreter.createInterpretable(checkedResult).eval(activation);
+  }
+
+  @Test
+  public void testCelInterface() {
+    try {
+      setup();
+    } catch (InterpreterException e) {
+      
+    }
+    
+    assertThat(messageProvider).isNotNull();
+    assertThat(dispatcher).isNotNull();
+    assertThat(interpreter).isNotNull();
+    assertThat(checkedResult).isNotNull();
+    assertThat(activation).isNotNull();
     assertThat(result).isNotNull();
   }
 }
