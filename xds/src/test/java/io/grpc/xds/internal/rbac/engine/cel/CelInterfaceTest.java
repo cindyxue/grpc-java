@@ -19,6 +19,7 @@ package io.grpc.xds.internal;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.api.expr.v1alpha1.CheckedExpr;
+import com.google.api.expr.v1alpha1.ParsedExpr;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
 import io.grpc.xds.InterpreterException;
@@ -47,7 +48,9 @@ public class CelInterfaceTest {
     messageProvider = DescriptorMessageProvider.dynamicMessages(descriptors);
     dispatcher = DefaultDispatcher.create();
     interpreter = new DefaultInterpreter(messageProvider, dispatcher);
-    checkedResult = CheckedExpr.newBuilder().build();
+
+    ParsedExpr parsedConditions = ParsedExpr.newBuilder().build();
+    checkedResult = ExprChecker.check(new Env(), "", parsedConditions);
 
     Map<String, Object> map = new HashMap<>();
     map.put("requestUrlPath", new Object());
@@ -57,7 +60,6 @@ public class CelInterfaceTest {
     map.put("sourceAddress", new Object());
     map.put("sourcePort", new Object());
     map.put("destinationAddress", new Object());
-
     ImmutableMap<String, Object> apiAttributes = ImmutableMap.copyOf(map);
 
     activation = Activation.copyOf(apiAttributes);
@@ -69,7 +71,7 @@ public class CelInterfaceTest {
     try {
       setup();
     } catch (InterpreterException e) {
-      
+      System.out.println(e.toString());
     }
     
     assertThat(messageProvider).isNotNull();
