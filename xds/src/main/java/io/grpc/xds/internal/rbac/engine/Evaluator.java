@@ -20,40 +20,35 @@ import com.google.api.expr.v1alpha1.CheckedExpr;
 import com.google.api.expr.v1alpha1.Expr;
 import com.google.api.expr.v1alpha1.ParsedExpr;
 import com.google.api.expr.v1alpha1.SourceInfo;
+import com.google.api.expr.v1alpha1.Type;
+import com.google.api.expr.v1alpha1.Type.PrimitiveType;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
-import io.envoyproxy.envoy.config.rbac.v2.Policy;
-import io.envoyproxy.envoy.config.rbac.v2.RBAC;
-import io.grpc.Attributes;
-import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
 import io.grpc.Grpc;
-import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
+import io.grpc.Metadata;
 import io.grpc.xds.InterpreterException;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/** Evaluator class for Cel expressions. */
 class Evaluator<ReqT, RespT> {
-    /**
-   * Determines if a condition matches the given EvaluateArgs using Cel library
-   * @param <ReqT>
-   * @param <RespT>
-   * @param conditions
-   * @param args
-   * @return
-   * @throws InterpreterException
+  /**
+   * Determines if a condition matches the given EvaluateArgs using Cel library.
+   * @param <ReqT> Request type.
+   * @param <RespT> Response type.
+   * @param conditions RBAC conditions.
+   * @param args EvaluateArgs.
+   * @return if a condition matches the EvaluateArgs.
+   * @throws InterpreterException if something goes wrong.
    */
   protected static <ReqT, RespT> boolean matches(Expr conditions, EvaluateArgs<ReqT, RespT> args) 
     throws InterpreterException {
-    CheckedExpr checkedResult = Evaluator.parseConditions(conditions);
     ImmutableMap<String, Object> apiAttributes = Evaluator.extractFields(args);
-    Object result = Evaluator.celEvaluate(checkedResult, apiAttributes);
+    Object result = Evaluator.celEvaluate(conditions, apiAttributes);
 
-    if(result instanceof Boolean) {
+    if (result instanceof Boolean) {
       return Boolean.parseBoolean(result.toString());
     }
 
@@ -62,19 +57,33 @@ class Evaluator<ReqT, RespT> {
 
   /**
    * Helper function for cel evaluate.
-   * @param <ReqT>
-   * @param <RespT>
-   * @param checkedResult
-   * @param apiAttributes
-   * @return
-   * @throws InterpreterException
+   * @param <ReqT> Request type.
+   * @param <RespT> Response type.
+   * @param conditions RBAC conditions.
+   * @param apiAttributes Envoy attributes map.
+   * @return the evaluate result.
+   * @throws InterpreterException if something goes wrong.
    */
-  protected static <ReqT, RespT> Object celEvaluate(CheckedExpr checkedResult, 
-    ImmutableMap<String, Object> apiAttributes) throws InterpreterException {
+  protected static <ReqT, RespT> Object celEvaluate(Expr conditions, 
+      ImmutableMap<String, Object> apiAttributes) throws InterpreterException {
     List<Descriptor> descriptors = new ArrayList<>();
     RuntimeTypeProvider messageProvider = DescriptorMessageProvider.dynamicMessages(descriptors);
     Dispatcher dispatcher = DefaultDispatcher.create();
     Interpreter interpreter = new DefaultInterpreter(messageProvider, dispatcher);
+
+    Errors errors = new Errors("source_location", null);
+    TypeProvider typeProvider = new DescriptorTypeProvider();
+    Env env = Env.standard(errors, typeProvider);
+    for (Map.Entry<String, Object> entry : apiAttributes.entrySet()) {
+      Type type = Type.newBuilder().setPrimitive(PrimitiveType.STRING).build();
+      env.add(entry.getKey(), type);
+    }
+
+    CheckedExpr checkedResult = Evaluator.exprToCheckedExpr(conditions, env);
+
+    if (errors.getErrorCount() > 0) {
+      throw new RuntimeException(errors.getAllErrorsAsString());
+    }
 
     Activation activation = Activation.copyOf(apiAttributes);
     Object result = interpreter.createInterpretable(checkedResult).eval(activation);
@@ -83,31 +92,33 @@ class Evaluator<ReqT, RespT> {
   }
 
   /**
-   * Convert conditions from Expr type into CheckedExpr type
-   * @param conditions
-   * @return
+   * Convert conditions from Expr type into CheckedExpr type.
+   * @param conditions RBAC conditions.
+   * @return a CheckedExpr converted from Expr.
    */
-  public static CheckedExpr parseConditions(Expr conditions) {
-    if(conditions == null) {
+  protected static CheckedExpr exprToCheckedExpr(Expr conditions, Env env) {
+    if (conditions == null) {
       return null;
     }
 
     ParsedExpr parsedConditions = ParsedExpr.newBuilder()
-      .setExpr(conditions)
-      .setSourceInfo(SourceInfo.newBuilder().build())
-      .build();
+        .setExpr(conditions)
+        .setSourceInfo(SourceInfo.newBuilder().build())
+        .build();
 
-    return CheckedExpr.newBuilder().build();
+    CheckedExpr checkedResult = ExprChecker.check(env, "", parsedConditions);
+
+    return checkedResult;
   }
 
   /**
-   * Extract Envoy Attributes from EvaluateArgs
-   * @param args
-   * @return 
+   * Extract Envoy Attributes from EvaluateArgs.
+   * @param args evaluateArgs.
+   * @return an immuatable map contains String and the corresponding object.
    */
   protected static <ReqT, RespT> ImmutableMap<String, Object> extractFields(
-    EvaluateArgs<ReqT, RespT> args) {
-    if(args == null) {
+      EvaluateArgs<ReqT, RespT> args) {
+    if (args == null) {
       return null;
     }
 
@@ -123,89 +134,94 @@ class Evaluator<ReqT, RespT> {
     return ImmutableMap.copyOf(attributes);
   }
 
-  // private static <ReqT, RespT> void setRequestUrlPath(EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
+  // private static <ReqT, RespT> void setRequestUrlPath(
+  //    EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
   //   String requestUrlPath = "";
-  //   if(requestUrlPath == null || requestUrlPath.length() == 0) {
+  //   if (requestUrlPath == null || requestUrlPath.length() == 0) {
   //     return;
   //   }
   //   attributes.put("requestUrlPath", requestUrlPath);
   // }
 
   private static <ReqT, RespT> void setRequestHost(
-    EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
+      EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
     String requestHost = args.getCall().getMethodDescriptor().getServiceName();
-    if(requestHost == null || requestHost.length() == 0) {
+    if (requestHost == null || requestHost.length() == 0) {
       return;
     }
     attributes.put("requestHost", requestHost);
   }
 
   private static <ReqT, RespT> void setRequestMethod(
-    EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
+      EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
     String requestMethod = args.getCall().getMethodDescriptor().getFullMethodName();
-    if(requestMethod == null || requestMethod.length() == 0) {
+    if (requestMethod == null || requestMethod.length() == 0) {
       return;
     }
     attributes.put("requestMethod", requestMethod);
   }
 
   private static <ReqT, RespT> void setRequestHeaders(
-    EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
+      EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
     Metadata requestHeaders = args.getHeaders();
-    if(requestHeaders == null) {
+    if (requestHeaders == null) {
       return;
     }
     attributes.put("requestHeaders", requestHeaders);
   }
 
   private static <ReqT, RespT> void setSourceAddress(
-    EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
+      EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
     String sourceAddress = args.getCall().getAttributes()
-      .get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR).toString();
-    if(sourceAddress == null || sourceAddress.length() == 0) {
+        .get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR).toString();
+    if (sourceAddress == null || sourceAddress.length() == 0) {
       return;
     }
     attributes.put("sourceAddress", sourceAddress);
   }
 
-  // private static <ReqT, RespT> void setSourcePort(EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
+  // private static <ReqT, RespT> void setSourcePort(
+  //    EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
   //   Integer sourcePort = 0;
-  //   if(sourcePort == null) {
+  //   if (sourcePort == null) {
   //     return;
   //   }
   //   attributes.put("sourcePort", sourcePort);
   // }
 
   private static <ReqT, RespT> void setDestinationAddress(
-    EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
+      EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
     String destinationAddress = args.getCall().getAttributes()
-      .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR).toString();
-    if(destinationAddress == null || destinationAddress.length() == 0) {
+        .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR).toString();
+    if (destinationAddress == null || destinationAddress.length() == 0) {
       return;
     }
     attributes.put("destinationAddress", destinationAddress);
   }
 
-  // private static <ReqT, RespT> void setDestinationPort(EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
+  // private static <ReqT, RespT> void setDestinationPort(
+  //    EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
   //   Integer destinationPort = 0;
-  //   if(destinationPort == null) {
+  //   if (destinationPort == null) {
   //     return;
   //   }
   //   attributes.put("destinationPort", destinationPort);
   // }
 
   private static <ReqT, RespT> void setConnectionRequestedServerName(
-    EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
+      EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
     String connectionRequestedServerName = args.getCall().getAuthority();
-    if(connectionRequestedServerName == null || connectionRequestedServerName.length() == 0) {
+    if (connectionRequestedServerName == null || connectionRequestedServerName.length() == 0) {
       return;
     }
     attributes.put("connectionRequestedServerName", connectionRequestedServerName);
   }
 
-  // private static <ReqT, RespT> void setConnectionUriSanPeerCertificate(EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
+  // private static <ReqT, RespT> void setConnectionUriSanPeerCertificate(
+  //    EvaluateArgs<ReqT, RespT> args, Map<String, Object> attributes) {
   //   String connectionUriSanPeerCertificate = "";
-  //   if(connectionUriSanPeerCertificate == null || connectionUriSanPeerCertificate.length() == 0) {
+  //   if (connectionUriSanPeerCertificate == null 
+  //      || connectionUriSanPeerCertificate.length() == 0) {
   //     return;
   //   }
   //   attributes.put("connectionUriSanPeerCertificate", connectionUriSanPeerCertificate);

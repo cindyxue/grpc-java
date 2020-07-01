@@ -16,25 +16,13 @@
 
 package io.grpc.xds.internal;
 
-import com.google.api.expr.v1alpha1.CheckedExpr;
 import com.google.api.expr.v1alpha1.Expr;
-import com.google.api.expr.v1alpha1.ParsedExpr;
-import com.google.api.expr.v1alpha1.SourceInfo;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.Descriptors.Descriptor;
 import io.envoyproxy.envoy.config.rbac.v2.Policy;
 import io.envoyproxy.envoy.config.rbac.v2.RBAC;
-import io.grpc.Attributes;
-import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
-import io.grpc.Grpc;
-import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
 import io.grpc.xds.InterpreterException;
-import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /** 
@@ -43,18 +31,20 @@ import java.util.Map;
  */
 public class CelEvaluationEngine<ReqT, RespT> {
   private final RBAC.Action action;
-  private final Map<String, Expr> conditions;
+  private final ImmutableMap<String, Expr> conditions;
 
   /**
    * Builds a CEL evaluation engine from Envoy RBAC.
-   * @param rbac input envoy RBAC policies.
+   * @param rbac input Envoy RBAC policies.
    */
-  public CelEvaluationEngine(@Nullable RBAC rbac) {
-    this.action = rbac.getAction();
-    this.conditions = new HashMap<>();
-    for(Map.Entry<String, Policy> entry: rbac.getPolicies().entrySet()) {
-        this.conditions.put(entry.getKey(), entry.getValue().getCondition());
+  public CelEvaluationEngine(RBAC rbac) {
+    Map<String, Expr> conditions = new HashMap<>();
+    for (Map.Entry<String, Policy> entry: rbac.getPolicies().entrySet()) {
+      conditions.put(entry.getKey(), entry.getValue().getCondition());
     }
+
+    this.action = Preconditions.checkNotNull(rbac.getAction());
+    this.conditions = Preconditions.checkNotNull(ImmutableMap.copyOf(conditions));
   }
 
   // Builds a CEL evaluation engine from runtime policy template.
@@ -72,15 +62,19 @@ public class CelEvaluationEngine<ReqT, RespT> {
     AuthorizationDecision authDecision = new AuthorizationDecision();
     for (Map.Entry<String, Expr> entry : this.conditions.entrySet()) {
       if (Evaluator.matches(entry.getValue(), args)) {
-        authDecision.decision = this.action == RBAC.Action.ALLOW ? 
-            AuthorizationDecision.Decision.ALLOW : AuthorizationDecision.Decision.DENY;
-        authDecision.authorizationContext = "policy matched: " + entry.getKey();
+        if (this.action == RBAC.Action.ALLOW) {
+          authDecision.decision = AuthorizationDecision.Decision.ALLOW;
+        } else {
+          authDecision.decision = AuthorizationDecision.Decision.DENY;
+        }
+        authDecision.authorizationContext = "Policy matched: " + entry.getKey();
         return authDecision;
       }
     }
 
     authDecision.decision = AuthorizationDecision.Decision.UNKNOWN;
-    authDecision.authorizationContext = "Unable to decide based on given information - no policies matched";
+    authDecision.authorizationContext = 
+      "Unable to decide based on given information - no policies matched";
     return authDecision;
   }
 }

@@ -17,9 +17,7 @@
 package io.grpc.xds.internal;
 
 import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
 
 /** Args for Cel evaluation, which contains necessary information on Envoy Attributes. */
 public class EvaluateArgs<ReqT, RespT> {

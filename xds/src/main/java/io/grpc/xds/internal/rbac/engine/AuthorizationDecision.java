@@ -16,6 +16,8 @@
 
 package io.grpc.xds.internal;
 
+import java.lang.StringBuilder;
+
 /** 
  * Authorization decision of Cel Engine.
  * Decisions are generated based on Envoy Attributes.
@@ -29,4 +31,26 @@ public class AuthorizationDecision {
 
   Decision decision;
   String authorizationContext;
+
+  @Override
+  public String toString() {
+    StringBuilder authDecision = new StringBuilder();
+    switch (this.decision) {
+      case ALLOW: 
+        authDecision.append("Authorization Decision: ALLOW.\n");
+        break;
+      case DENY: 
+        authDecision.append("Authorization Decision: DENY.\n");
+        break;
+      case UNKNOWN: 
+        authDecision.append("Authorization Decision: UNKNOWN.\n");
+        break;
+      default: 
+        // throw new Exception();
+        authDecision.append("");
+        break;
+    }
+    authDecision.append(this.authorizationContext);
+    return authDecision.toString();
+  }
 }
