@@ -19,6 +19,7 @@ package io.grpc.xds.internal;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 import javax.annotation.Nullable;
 
@@ -50,8 +51,7 @@ public final class Errors {
   /**
    * Creates an errors object.
    *
-   * @param description description of the root error context used in error messages,
-   * e.g. a filename.
+   * @param description description of the root error context used in error messages.
    * @param source the (optional) source string associated with the root error context.
    */
   public Errors(String description, @Nullable String source) {

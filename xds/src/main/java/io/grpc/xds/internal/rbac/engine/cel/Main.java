@@ -5,7 +5,6 @@ import com.google.api.expr.v1alpha1.Expr;
 import com.google.api.expr.v1alpha1.ParsedExpr;
 import com.google.api.expr.v1alpha1.SourceInfo;
 import com.google.api.expr.v1alpha1.Type;
-import com.google.api.tools.expr.features.ExprFeatures;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -20,17 +19,17 @@ import java.util.Map;
 
 public class Main {
   public static void main(String[] args) throws InterpreterException {
-    Errors errors = new Errors("source_location", null);
-    TypeProvider typeProvider = new DescriptorTypeProvider();
-    Env env = Env.standard(errors, typeProvider);
-    env.add("requestUrlPath", Type.newBuilder().build(), null);
-    env.add("requestHost", Type.newBuilder().build(), null);
-    env.add("requestMethod", Type.newBuilder().build(), null);
-
     List<Descriptor> descriptors = new ArrayList<>();
     RuntimeTypeProvider messageProvider = DescriptorMessageProvider.dynamicMessages(descriptors);
     Dispatcher dispatcher = DefaultDispatcher.create();
     Interpreter interpreter = new DefaultInterpreter(messageProvider, dispatcher);
+
+    Errors errors = new Errors("source_location", null);
+    TypeProvider typeProvider = new DescriptorTypeProvider();
+    Env env = Env.standard(errors, typeProvider);
+    env.add("requestUrlPath", Type.newBuilder().build());
+    env.add("requestHost", Type.newBuilder().build());
+    env.add("requestMethod", Type.newBuilder().build());
 
     Expr conditions = Expr.newBuilder().build();
     ParsedExpr parsedConditions = ParsedExpr.newBuilder()

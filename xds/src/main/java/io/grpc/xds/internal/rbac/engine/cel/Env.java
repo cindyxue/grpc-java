@@ -16,16 +16,11 @@
 
 package io.grpc.xds.internal;
 
-import com.google.api.expr.v1alpha1.Type;
 import com.google.api.expr.v1alpha1.Decl;
 import com.google.api.expr.v1alpha1.Decl.IdentDecl;
-import com.google.api.tools.expr.features.ExprFeatures;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.api.expr.v1alpha1.Type;
+// import com.google.api.tools.expr.features.ExprFeatures;
 import com.google.common.collect.ImmutableSet;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Stack;
 
 /**
@@ -34,18 +29,22 @@ import java.util.Stack;
  */
 public class Env {
   /** Type provider responsible for resolving CEL message references to strong types. */
+  @SuppressWarnings("unused")
   private final TypeProvider typeProvider;
 
   /**
    * Stack of declaration groups where each entry in stack represents a scope capable of hinding
    * declarations lower in the stack.
    */
+  @SuppressWarnings({"unused", "JdkObsolete"})
   private final Stack<DeclGroup> decls = new Stack<>();
 
   /** Object used for error reporting. */
+  @SuppressWarnings("unused")
   private final Errors errors;
 
   /** CEL Feature flags. */
+  @SuppressWarnings("unused")
   private final ImmutableSet<ExprFeatures> exprFeatures;
 
   private Env(
@@ -54,9 +53,9 @@ public class Env {
       DeclGroup declGroup,
       ImmutableSet<ExprFeatures> exprFeatures) {
     this.exprFeatures = exprFeatures;
-    this.errors = Preconditions.checkNotNull(errors);
-    this.typeProvider = Preconditions.checkNotNull(typeProvider);
-    this.decls.push(Preconditions.checkNotNull(declGroup));
+    this.errors = errors;
+    this.typeProvider = typeProvider;
+    this.decls.push(declGroup);
   }
 
   /**
@@ -69,7 +68,7 @@ public class Env {
 
   /** Adds simple name declaration to the environment for a non-function. */
   public Env add(String name, Type type) {
-    return add(Decl.newBuilder().build());
+    return add(new IdentBuilder(name).type(type).build());
   }
 
   /**
@@ -98,6 +97,27 @@ public class Env {
   }
 
   /** Object for managing a group of declarations within a scope. */
-  public static class DeclGroup {
+  public static class DeclGroup {}
+
+  /** A helper class for constructing identifier declarations. */
+  public static final class IdentBuilder {
+    private final String name;
+    private final IdentDecl.Builder builder = IdentDecl.newBuilder();
+
+    /** Create an identifier builder. */
+    public IdentBuilder(String name) {
+      this.name = name;
+    }
+
+    /** Set the identifier type. */
+    public IdentBuilder type(Type value) {
+      builder.setType(value);
+      return this;
+    }
+
+    /** Build the ident {@code Decl}. */
+    public Decl build() {
+      return Decl.newBuilder().setName(name).setIdent(builder).build();
+    }
   }
 }
