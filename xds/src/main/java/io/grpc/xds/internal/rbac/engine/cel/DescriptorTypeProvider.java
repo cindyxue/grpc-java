@@ -16,15 +16,4 @@
 
 package io.grpc.xds.internal;
 
-import com.google.protobuf.Descriptors.Descriptor;
-
-/** An implementation of {@link RuntimeTypeProvider} which relies on proto descriptors. */
-public class DescriptorMessageProvider implements RuntimeTypeProvider {
-  /**
-   * Creates a new message provider that provides only {@link DynamicMessage DynamicMessages} for
-   * the specified descriptors.
-   */
-  public static DescriptorMessageProvider dynamicMessages(Iterable<Descriptor> descriptors) {
-    return new DescriptorMessageProvider();
-  }
-}
+public class DescriptorTypeProvider implements TypeProvider {}
