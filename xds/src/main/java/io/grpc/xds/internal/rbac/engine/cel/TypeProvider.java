@@ -16,15 +16,8 @@
 
 package io.grpc.xds.internal;
 
-import com.google.protobuf.Descriptors.Descriptor;
-
-/** An implementation of {@link RuntimeTypeProvider} which relies on proto descriptors. */
-public class DescriptorMessageProvider implements RuntimeTypeProvider {
-  /**
-   * Creates a new message provider that provides only {@link DynamicMessage DynamicMessages} for
-   * the specified descriptors.
-   */
-  public static DescriptorMessageProvider dynamicMessages(Iterable<Descriptor> descriptors) {
-    return new DescriptorMessageProvider();
-  }
-}
+/**
+ * The {@code TypeResolver} determines the CEL type of Java-native values and assists with adapting
+ * check-time types to runtime values.
+ */
+public interface TypeProvider {}
