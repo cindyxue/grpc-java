@@ -19,7 +19,6 @@ package io.grpc.xds.internal;
 import com.google.api.expr.v1alpha1.Decl;
 import com.google.api.expr.v1alpha1.Decl.IdentDecl;
 import com.google.api.expr.v1alpha1.Type;
-// import com.google.api.tools.expr.features.ExprFeatures;
 import com.google.common.collect.ImmutableSet;
 import java.util.Stack;
 
