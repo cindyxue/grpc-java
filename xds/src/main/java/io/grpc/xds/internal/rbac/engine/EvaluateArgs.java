@@ -19,30 +19,26 @@ package io.grpc.xds.internal;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 
-/** Args for Cel evaluation, which contains necessary information on Envoy Attributes. */
+/** The EvaluateArgs class holds evaluate arguments used in Cel Evaluation Engine. */
 public class EvaluateArgs<ReqT, RespT> {
   private Metadata headers;
   private ServerCall<ReqT, RespT> call;
 
-  public EvaluateArgs() {
-    this.headers = null;
-    this.call = null;
-  }
-
-  public EvaluateArgs(ServerCall<ReqT, RespT> call) {
-    this.headers = null;
-    this.call = call;
-  }
-
+  /**
+   * Creates a new evaluate argument using the input {@code headers} for resolving headers
+   * and {@code call} for resolving gRPC call.
+   */
   public EvaluateArgs(Metadata headers, ServerCall<ReqT, RespT> call) {
     this.headers = headers;
     this.call = call;
   }
 
+  /** Returns the headers. */
   public Metadata getHeaders() {
     return headers;
   }
 
+  /** Returns the gRPC call. */
   public ServerCall<ReqT, RespT> getCall() {
     return call;
   }

@@ -19,34 +19,66 @@ package io.grpc.xds.internal;
 import java.lang.StringBuilder;
 
 /** 
- * Authorization decision of Cel Engine.
- * Decisions are generated based on Envoy Attributes.
+ * The AuthorizationDecision class holds authorization decision 
+ * returned by Cel Evaluation Engine. 
  */
 public class AuthorizationDecision {
-  enum Decision {
+  /** The Decision enum represents the possible decisions outputted by Cel Evaluation Engine.*/
+  public enum Decision {
+    /** 
+     * The Decision ALLOW indicates that Cel Evaluate Engine 
+     * had authorized the gRPC call and allowed the gRPC call to go through.
+     */
     ALLOW,
+    /** 
+     * The Decision DENY indicates that Cel Evaluate Engine 
+     * had authorized the gRPC call and denied the gRPC call from going through.
+     */
     DENY,
+    /** 
+     * The Decision UNKNOWN indicates that Cel Evaluate Engine 
+     * did not have enough information to authorize the gRPC call. 
+     * */
     UNKNOWN,
   }
 
-  Decision decision;
-  String authorizationContext;
+  private Decision decision;
+  private String authorizationContext;
+
+  /**
+   * Creates a new authorization decision using the input {@code decision} 
+   * for resolving authorization decision
+   * and {@code authorizationContext} for resolving authorization context.
+   */
+  public AuthorizationDecision(Decision decision, String authorizationContext) {
+    this.decision = decision;
+    this.authorizationContext = authorizationContext;
+  }
+
+  /** Returns the authorization decision. */
+  public Decision getDecision() {
+    return this.decision;
+  }
+
+  /** Returns the authorization context. */
+  public String getAuthorizationContext() {
+    return this.authorizationContext;
+  }
 
   @Override
   public String toString() {
     StringBuilder authDecision = new StringBuilder();
     switch (this.decision) {
       case ALLOW: 
-        authDecision.append("Authorization Decision: ALLOW.\n");
+        authDecision.append("Authorization Decision: ALLOW. \n");
         break;
       case DENY: 
-        authDecision.append("Authorization Decision: DENY.\n");
+        authDecision.append("Authorization Decision: DENY. \n");
         break;
       case UNKNOWN: 
-        authDecision.append("Authorization Decision: UNKNOWN.\n");
+        authDecision.append("Authorization Decision: UNKNOWN. \n");
         break;
       default: 
-        // throw new Exception();
         authDecision.append("");
         break;
     }
