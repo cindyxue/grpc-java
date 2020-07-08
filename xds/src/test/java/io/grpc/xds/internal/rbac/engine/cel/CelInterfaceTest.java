@@ -31,7 +31,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link DefaultInterpreter}. */
+/** Unit tests for Cel Interface. */
 @RunWith(JUnit4.class)
 public class CelInterfaceTest {
   private RuntimeTypeProvider messageProvider;
