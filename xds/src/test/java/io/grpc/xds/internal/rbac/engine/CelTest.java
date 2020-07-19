@@ -68,14 +68,21 @@ public class CelTest<ReqT, RespT> {
   private Expr condition1;
   private Expr condition2;
   private Expr condition3;
+  private Expr condition4;
+  private Expr condition5;
+  private Expr condition6;
 
   private Policy policy1;
   private Policy policy2;
   private Policy policy3;
+  private Policy policy4;
+  private Policy policy5;
+  private Policy policy6;
   
   private RBAC rbacAllow;
   private RBAC rbacDeny;
 
+  @Mock
   private Map<String, Object> attributes;
 
   @Rule
@@ -98,13 +105,23 @@ public class CelTest<ReqT, RespT> {
     condition3 = Expr.newBuilder()
         .setIdentExpr(Ident.newBuilder().setName("Condition 3").build())
         .build();
+    condition4 = Expr.newBuilder()
+        .setIdentExpr(Ident.newBuilder().setName("Condition 4").build())
+        .build();
+    condition5 = Expr.newBuilder()
+        .setIdentExpr(Ident.newBuilder().setName("Condition 5").build())
+        .build();
+    condition6 = Expr.newBuilder()
+        .setIdentExpr(Ident.newBuilder().setName("Condition 6").build())
+        .build();
 
     policy1 = Policy.newBuilder().setCondition(condition1).build();
     policy2 = Policy.newBuilder().setCondition(condition2).build();
     policy3 = Policy.newBuilder().setCondition(condition3).build();
-    
-    attributes = new HashMap<>();
-    
+    policy4 = Policy.newBuilder().setCondition(condition4).build();
+    policy5 = Policy.newBuilder().setCondition(condition5).build();
+    policy6 = Policy.newBuilder().setCondition(condition6).build();
+        
     rbacAllow = RBAC.newBuilder()
         .setAction(Action.ALLOW)
         .putPolicies("Policy 1", policy1)
@@ -113,9 +130,9 @@ public class CelTest<ReqT, RespT> {
         .build();
     rbacDeny = RBAC.newBuilder()
         .setAction(Action.DENY)
-        .putPolicies("Policy 1", policy1)
-        .putPolicies("Policy 2", policy2)
-        .putPolicies("Policy 3", policy3)
+        .putPolicies("Policy 4", policy4)
+        .putPolicies("Policy 5", policy5)
+        .putPolicies("Policy 6", policy6)
         .build();
 
     List<RBAC> rbacList = new ArrayList<>(Arrays.asList(new RBAC[] {rbacAllow}));
